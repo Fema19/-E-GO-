@@ -11,8 +11,10 @@ import (
 
 type ctxKey string
 
-const CtxEmail ctxKey = "email"
-
+const (
+	CtxEmail  ctxKey = "email"
+	CtxUserID ctxKey = "user_id"
+)
 var jwtSecret = []byte("supersecretkey")
 
 func JWTAuth(next http.Handler) http.Handler {
@@ -60,7 +62,14 @@ func JWTAuth(next http.Handler) http.Handler {
 		}
 
 		email, _ := claims["email"].(string)
+		uidFloat, ok := claims["user_id"].(float64)
+		var userID uint
+		if ok {
+			userID = uint(uidFloat)
+}
+
 		ctx := context.WithValue(r.Context(), CtxEmail, email)
+		ctx = context.WithValue(ctx, CtxUserID, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -72,4 +81,15 @@ func GetEmail(r *http.Request) string {
 	}
 	s, _ := v.(string)
 	return s
+}
+func GetUserID(r *http.Request) uint {
+	v := r.Context().Value(CtxUserID)
+	if v == nil {
+		return 0
+	}
+	id, ok := v.(uint)
+	if !ok {
+		return 0
+	}
+	return id
 }

@@ -15,11 +15,16 @@ func main() {
 	db := database.Connect()
 
 	userRepo := repository.NewUserRepository(db)
+	eventRepo := repository.NewEventRepository(db)
+
 	authService := service.NewAuthService(userRepo)
 	authHandler := handler.NewAuthHandler(authService)
+	eventService := service.NewEventService(eventRepo)
+	eventHandler := handler.NewEventHandler(eventService)
 
 	http.HandleFunc("/register", authHandler.Register)
 	http.HandleFunc("/login", authHandler.Login)
+	http.Handle("/events", middleware.JWTAuth(http.HandlerFunc(eventHandler.Create)))
 
 	http.Handle("/me",
 		middleware.JWTAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
